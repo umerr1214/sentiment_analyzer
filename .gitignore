@@ -1,0 +1,5 @@
+# Ignore large CSV files
+dataset/*.csv
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
