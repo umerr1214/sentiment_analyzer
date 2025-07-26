@@ -209,7 +209,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown("<h1>💬 Sentiment Studio</h1>", unsafe_allow_html=True)
+st.markdown("<h1>Sentiment Studio</h1>", unsafe_allow_html=True)
 st.markdown("Analyze your product reviews using multiple sentiment analysis techniques.")
 
 # Sidebar
@@ -231,174 +231,175 @@ if st.button("Analyze Sentiment 🚀", use_container_width=True):
     if user_input.strip() == "":
         st.error("⚠️ Please enter a review.")
     else:
-        predictions = {}
+        with st.spinner("Analyzing sentiment, please wait..."):
+            predictions = {}
 
-        if model_choice in ["All Models", "Logistic Regression"]:
-            cleaned = clean_text(user_input)
-            X_input = vectorizer.transform([cleaned])
-            predictions["Logistic Regression"] = lr.predict(X_input)[0]
+            if model_choice in ["All Models", "Logistic Regression"]:
+                cleaned = clean_text(user_input)
+                X_input = vectorizer.transform([cleaned])
+                predictions["Logistic Regression"] = lr.predict(X_input)[0]
 
-        if model_choice in ["All Models", "Naive Bayes"]:
-            cleaned = clean_text(user_input)
-            X_input = vectorizer.transform([cleaned])
-            predictions["Naive Bayes"] = nb.predict(X_input)[0]
+            if model_choice in ["All Models", "Naive Bayes"]:
+                cleaned = clean_text(user_input)
+                X_input = vectorizer.transform([cleaned])
+                predictions["Naive Bayes"] = nb.predict(X_input)[0]
 
-        if model_choice in ["All Models", "VADER"]:
-            predictions["VADER"] = vader_sentiment(user_input)
+            if model_choice in ["All Models", "VADER"]:
+                predictions["VADER"] = vader_sentiment(user_input)
 
-        if model_choice in ["All Models", "TextBlob"]:
-            predictions["TextBlob"] = textblob_sentiment(user_input)
+            if model_choice in ["All Models", "TextBlob"]:
+                predictions["TextBlob"] = textblob_sentiment(user_input)
 
-        # Display results
-        st.subheader("🔍 Predictions")
-        cols = st.columns(len(predictions))
-        for i, (model, pred) in enumerate(predictions.items()):
-            sentiment_class = "positive" if pred == "positive" else "negative" if pred == "negative" else "neutral"
-            cols[i].markdown(f"""
-                <div class="card">
-                    <h4>{model}</h4>
-                    <p class="sentiment {sentiment_class}">{pred.upper()}</p>
-                </div>
-            """, unsafe_allow_html=True)
+            # Display results
+            st.subheader("🔍 Predictions")
+            cols = st.columns(len(predictions))
+            for i, (model, pred) in enumerate(predictions.items()):
+                sentiment_class = "positive" if pred == "positive" else "negative" if pred == "negative" else "neutral"
+                cols[i].markdown(f"""
+                    <div class="card">
+                        <h4>{model}</h4>
+                        <p class="sentiment {sentiment_class}">{pred.upper()}</p>
+                    </div>
+                """, unsafe_allow_html=True)
 
-        # Model Statistics and Explanations
-        st.subheader("📊 Model Performance & Explanation")
-        
-        for model_name, pred in predictions.items():
-            if model_name in MODEL_STATS:
-                stats = MODEL_STATS[model_name]
-                
-                st.markdown(f"### {model_name} Analysis")
-                
-                # Model description
-                st.markdown(f"**About this model:** {stats['description']}")
-                
-                # Performance metrics
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown("**Performance Metrics:**")
-                    st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('accuracy', stats['accuracy'])}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('precision', stats['precision'])}</div>", unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown("**More Metrics:**")
-                    st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('recall', stats['recall'])}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('f1_score', stats['f1_score'])}</div>", unsafe_allow_html=True)
-                
-                # Strengths and weaknesses
-                col3, col4 = st.columns(2)
-                with col3:
-                    st.markdown("**✅ Strengths:**")
-                    st.info(stats['strengths'])
-                
-                with col4:
-                    st.markdown("**⚠️ Limitations:**")
-                    st.warning(stats['weaknesses'])
-                
-                # Prediction confidence explanation
-                if model_name in ["Logistic Regression", "Naive Bayes"]:
-                    st.markdown("**🤔 Why this prediction?**")
-                    st.markdown("This machine learning model was trained on thousands of product reviews. It learned patterns in words and phrases that typically indicate positive, negative, or neutral sentiment.")
-                elif model_name == "VADER":
-                    st.markdown("**🤔 Why this prediction?**")
-                    st.markdown("VADER analyzed your text using a pre-built dictionary of words with sentiment scores, plus rules for handling punctuation, capitalization, and context.")
-                elif model_name == "TextBlob":
-                    st.markdown("**🤔 Why this prediction?**")
-                    st.markdown("TextBlob used simple pattern matching and a basic sentiment lexicon to determine the overall polarity of your text.")
-                
-                st.markdown("---")
-
-        # Pie chart with model labels
-        st.subheader("📈 Sentiment Distribution")
-        
-        # Create a more detailed visualization showing which models predicted each sentiment
-        sentiment_model_mapping = {}
-        for model, sentiment in predictions.items():
-            if sentiment not in sentiment_model_mapping:
-                sentiment_model_mapping[sentiment] = []
-            sentiment_model_mapping[sentiment].append(model)
-        
-        # Create pie chart data
-        pie_data = []
-        for sentiment, models in sentiment_model_mapping.items():
-            pie_data.append({
-                'sentiment': sentiment,
-                'count': len(models),
-                'models': ', '.join(models)
-            })
-        
-        # Create the pie chart
-        fig = px.pie(
-            data_frame=pd.DataFrame(pie_data),
-            values='count',
-            names='sentiment',
-            color='sentiment',
-            color_discrete_map={
-                'positive': '#28a745',
-                'negative': '#dc3545',
-                'neutral': '#6c757d'
-            },
-            title="Sentiment Distribution by Model Predictions"
-        )
-        
-        # Update hover template to show which models predicted each sentiment
-        fig.update_traces(
-            hovertemplate="<b>%{label}</b><br>" +
-                         "Count: %{value}<br>" +
-                         "Models: %{customdata}<br>" +
-                         "<extra></extra>",
-            customdata=[item['models'] for item in pie_data]
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Show detailed breakdown below the chart
-        st.markdown("**Detailed Breakdown:**")
-        for sentiment, models in sentiment_model_mapping.items():
-            sentiment_color = {
-                'positive': '🟢',
-                'negative': '🔴', 
-                'neutral': '⚪'
-            }.get(sentiment, '⚪')
+            # Model Statistics and Explanations
+            st.subheader("📊 Model Performance & Explanation")
             
-            st.markdown(f"{sentiment_color} **{sentiment.title()}** ({len(models)} model{'s' if len(models) > 1 else ''}): {', '.join(models)}")
+            for model_name, pred in predictions.items():
+                if model_name in MODEL_STATS:
+                    stats = MODEL_STATS[model_name]
+                    
+                    st.markdown(f"### {model_name} Analysis")
+                    
+                    # Model description
+                    st.markdown(f"**About this model:** {stats['description']}")
+                    
+                    # Performance metrics
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.markdown("**Performance Metrics:**")
+                        st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('accuracy', stats['accuracy'])}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('precision', stats['precision'])}</div>", unsafe_allow_html=True)
+                    
+                    with col2:
+                        st.markdown("**More Metrics:**")
+                        st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('recall', stats['recall'])}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div class='metric-highlight'>{get_metric_explanation('f1_score', stats['f1_score'])}</div>", unsafe_allow_html=True)
+                    
+                    # Strengths and weaknesses
+                    col3, col4 = st.columns(2)
+                    with col3:
+                        st.markdown("**✅ Strengths:**")
+                        st.info(stats['strengths'])
+                    
+                    with col4:
+                        st.markdown("**⚠️ Limitations:**")
+                        st.warning(stats['weaknesses'])
+                    
+                    # Prediction confidence explanation
+                    if model_name in ["Logistic Regression", "Naive Bayes"]:
+                        st.markdown("**🤔 Why this prediction?**")
+                        st.markdown("This machine learning model was trained on thousands of product reviews. It learned patterns in words and phrases that typically indicate positive, negative, or neutral sentiment.")
+                    elif model_name == "VADER":
+                        st.markdown("**🤔 Why this prediction?**")
+                        st.markdown("VADER analyzed your text using a pre-built dictionary of words with sentiment scores, plus rules for handling punctuation, capitalization, and context.")
+                    elif model_name == "TextBlob":
+                        st.markdown("**🤔 Why this prediction?**")
+                        st.markdown("TextBlob used simple pattern matching and a basic sentiment lexicon to determine the overall polarity of your text.")
+                    
+                    st.markdown("---")
 
-        # Agreement check
-        if model_choice == "All Models":
-            st.subheader("🤝 Model Agreement")
-            unique_predictions = set(predictions.values())
-            if len(unique_predictions) == 1:
-                st.success("✅ All models agree on the sentiment!")
+            # Pie chart with model labels
+            st.subheader("📈 Sentiment Distribution")
+            
+            # Create a more detailed visualization showing which models predicted each sentiment
+            sentiment_model_mapping = {}
+            for model, sentiment in predictions.items():
+                if sentiment not in sentiment_model_mapping:
+                    sentiment_model_mapping[sentiment] = []
+                sentiment_model_mapping[sentiment].append(model)
+            
+            # Create pie chart data
+            pie_data = []
+            for sentiment, models in sentiment_model_mapping.items():
+                pie_data.append({
+                    'sentiment': sentiment,
+                    'count': len(models),
+                    'models': ', '.join(models)
+                })
+            
+            # Create the pie chart
+            fig = px.pie(
+                data_frame=pd.DataFrame(pie_data),
+                values='count',
+                names='sentiment',
+                color='sentiment',
+                color_discrete_map={
+                    'positive': '#28a745',
+                    'negative': '#dc3545',
+                    'neutral': '#6c757d'
+                },
+                title="Sentiment Distribution by Model Predictions"
+            )
+            
+            # Update hover template to show which models predicted each sentiment
+            fig.update_traces(
+                hovertemplate="<b>%{label}</b><br>" +
+                            "Count: %{value}<br>" +
+                            "Models: %{customdata}<br>" +
+                            "<extra></extra>",
+                customdata=[item['models'] for item in pie_data]
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Show detailed breakdown below the chart
+            st.markdown("**Detailed Breakdown:**")
+            for sentiment, models in sentiment_model_mapping.items():
+                sentiment_color = {
+                    'positive': '🟢',
+                    'negative': '🔴', 
+                    'neutral': '⚪'
+                }.get(sentiment, '⚪')
+                
+                st.markdown(f"{sentiment_color} **{sentiment.title()}** ({len(models)} model{'s' if len(models) > 1 else ''}): {', '.join(models)}")
+
+            # Agreement check
+            if model_choice == "All Models":
+                st.subheader("🤝 Model Agreement")
+                unique_predictions = set(predictions.values())
+                if len(unique_predictions) == 1:
+                    st.success("✅ All models agree on the sentiment!")
+                else:
+                    st.warning("⚠️ Models do not agree.")
+                    df_agree = []
+                    for i, (m1, p1) in enumerate(predictions.items()):
+                        for j, (m2, p2) in enumerate(predictions.items()):
+                            if i < j:
+                                df_agree.append({
+                                    "Model 1": m1,
+                                    "Model 2": m2,
+                                    "Agreement": "✅" if p1 == p2 else "❌"
+                                })
+                    st.dataframe(pd.DataFrame(df_agree), use_container_width=True)
+
+            # Explain model disagreements
+            st.subheader("🤔 Why might models disagree?")
+            explanations = explain_model_disagreement(predictions)
+            if explanations:
+                # Remove duplicates based on model name
+                seen_models = set()
+                unique_explanations = []
+                for exp in explanations:
+                    if exp['model'] not in seen_models:
+                        unique_explanations.append(exp)
+                        seen_models.add(exp['model'])
+                
+                for exp in unique_explanations:
+                    st.markdown(f"**{exp['model']} prediction for '{exp['prediction']}':** {exp['reason']}")
             else:
-                st.warning("⚠️ Models do not agree.")
-                df_agree = []
-                for i, (m1, p1) in enumerate(predictions.items()):
-                    for j, (m2, p2) in enumerate(predictions.items()):
-                        if i < j:
-                            df_agree.append({
-                                "Model 1": m1,
-                                "Model 2": m2,
-                                "Agreement": "✅" if p1 == p2 else "❌"
-                            })
-                st.dataframe(pd.DataFrame(df_agree), use_container_width=True)
-
-        # Explain model disagreements
-        st.subheader("🤔 Why might models disagree?")
-        explanations = explain_model_disagreement(predictions)
-        if explanations:
-            # Remove duplicates based on model name
-            seen_models = set()
-            unique_explanations = []
-            for exp in explanations:
-                if exp['model'] not in seen_models:
-                    unique_explanations.append(exp)
-                    seen_models.add(exp['model'])
-            
-            for exp in unique_explanations:
-                st.markdown(f"**{exp['model']} prediction for '{exp['prediction']}':** {exp['reason']}")
-        else:
-            st.info("All models predict the same sentiment or no disagreement to explain.")
+                st.info("All models predict the same sentiment or no disagreement to explain.")
 
 # Footer
 st.markdown("---")
