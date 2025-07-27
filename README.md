@@ -9,12 +9,10 @@
 ### 📝 Single Review Analysis
 - Enter a product review in a text box.
 - Get sentiment predictions from four models:
-  - **Logistic Regression** (trained on your data)
-  - **Naive Bayes** (trained on your data)
-  - **VADER** (pretrained, rule-based)
-  - **TextBlob** (pretrained, rule-based)
-- See a side-by-side comparison of model predictions.
-- Get easy-to-understand explanations for each model’s decision, including model strengths, weaknesses, and performance stats.
+  - **Logistic Regression** 
+  - **Naive Bayes** 
+  - **VADER** 
+  - **TextBlob**
 
 ### 📁 Batch Review Analysis
 - Upload a CSV or Excel file containing a column named `reviews.text`.
@@ -24,13 +22,6 @@
   - Color-coded table of all reviews and their predicted sentiment
   - Option to download the results as a CSV file
 
-### 📊 Visualizations & Explanations
-- Interactive pie charts for sentiment distribution.
-- Color-coded tables for easy review of results.
-- Model agreement and disagreement explanations.
-- Hover tooltips on charts show which models predicted each sentiment.
-
----
 
 ## Getting Started
 
@@ -99,17 +90,6 @@ streamlit run app.py
 
 ---
 
-## Screenshots
-
-*(Add screenshots here if you like!)*
-
 ---
 
-## License
-
-MIT License
-
----
-
-**Enjoy analyzing your product reviews with Sentiment Studio!**  
-For questions or suggestions, feel free to open an issue or pull request. 
+**Enjoy analyzing your product reviews with Sentiment Studio!**   
