@@ -28,8 +28,8 @@
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
-cd <your-repo-directory>
+git clone https://github.com/umerr1214/sentiment_analyzer.git
+cd sentiment_analyzer
 ```
 
 ### 2. Install Requirements
@@ -88,7 +88,6 @@ streamlit run app.py
 
 (Install all dependencies with `pip install -r requirements.txt`)
 
----
 
 ---
 
