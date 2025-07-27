@@ -8,6 +8,7 @@ from nltk.stem import WordNetLemmatizer
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from textblob import TextBlob
 import plotly.express as px
+import openpyxl
 
 # Download NLTK resources
 nltk.download('stopwords')
@@ -168,6 +169,25 @@ def explain_model_disagreement(predictions):
     
     return explanations
 
+def analyze_batch_reviews(df, model_name="VADER"):
+    """Analyze sentiment for a batch of reviews using VADER"""
+    results = []
+    
+    for index, row in df.iterrows():
+        review_text = row['reviews.text']
+        if pd.isnull(review_text) or str(review_text).strip() == "":
+            sentiment = "neutral"
+        else:
+            sentiment = vader_sentiment(str(review_text))
+        
+        results.append({
+            'Review_ID': index + 1,
+            'Review_Text': review_text,
+            'Sentiment': sentiment
+        })
+    
+    return pd.DataFrame(results)
+
 # Page config and style
 st.set_page_config(page_title="Sentiment Studio", page_icon="💬", layout="wide")
 
@@ -219,9 +239,105 @@ model_choice = st.sidebar.selectbox(
     ["All Models", "Logistic Regression", "Naive Bayes", "VADER", "TextBlob"]
 )
 
+# File upload section
+st.sidebar.header("📁 Batch Analysis")
+uploaded_file = st.sidebar.file_uploader(
+    "Upload CSV/Excel file with reviews",
+    type=['csv', 'xlsx', 'xls'],
+    help="File should have a column named 'reviews.text'"
+)
+
+# Batch Analysis Section
+if uploaded_file is not None:
+    st.header("📊 Batch Analysis Results")
+    
+    try:
+        # Read the file
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
+        
+        # Check if the required column exists
+        if 'reviews.text' not in df.columns:
+            st.error("❌ Error: The file must contain a column named 'reviews.text'")
+        else:
+            st.success(f"✅ Successfully loaded {len(df)} reviews from {uploaded_file.name}")
+            
+            # Show file info
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Reviews", len(df))
+            with col2:
+                st.metric("File Type", uploaded_file.name.split('.')[-1].upper())
+            with col3:
+                st.metric("Columns", len(df.columns))
+            
+            # Analyze button for batch processing
+            if st.button("🚀 Analyze All Reviews (VADER)", type="primary", use_container_width=True):
+                with st.spinner("Analyzing reviews with VADER, please wait..."):
+                    # Analyze all reviews
+                    results_df = analyze_batch_reviews(df)
+                    
+                    # Display results
+                    st.subheader("📋 Analysis Results")
+                    
+                    # Show summary statistics
+                    sentiment_counts = results_df['Sentiment'].value_counts()
+                    col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("Positive", sentiment_counts.get('positive', 0))
+                    with col2:
+                        st.metric("Neutral", sentiment_counts.get('neutral', 0))
+                    with col3:
+                        st.metric("Negative", sentiment_counts.get('negative', 0))
+                    
+                    # Create pie chart for batch results
+                    fig = px.pie(
+                        values=sentiment_counts.values,
+                        names=sentiment_counts.index,
+                        color_discrete_map={
+                            'positive': '#28a745',
+                            'negative': '#dc3545',
+                            'neutral': '#6c757d'
+                        },
+                        title="Sentiment Distribution (Batch Analysis)"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Display detailed results table
+                    st.subheader("📄 Detailed Results")
+                    
+                    # Add color coding to the dataframe
+                    def color_sentiment(val):
+                        if val == 'positive':
+                            return 'background-color: #d4edda'
+                        elif val == 'negative':
+                            return 'background-color: #f8d7da'
+                        else:
+                            return 'background-color: #e2e3e5'
+                    
+                    # Display the results with styling
+                    styled_df = results_df.style.applymap(color_sentiment, subset=['Sentiment'])
+                    st.dataframe(styled_df, use_container_width=True, height=400)
+                    
+                    # Download button for results
+                    csv = results_df.to_csv(index=False)
+                    st.download_button(
+                        label="📥 Download Results as CSV",
+                        data=csv,
+                        file_name=f"sentiment_analysis_results_{uploaded_file.name}",
+                        mime="text/csv"
+                    )
+    
+    except Exception as e:
+        st.error(f"❌ Error reading file: {str(e)}")
+
 # Input section
+st.header("📝 Single Review Analysis")
 user_input = st.text_area(
-    "📝 Enter your product review:",
+    "Enter your product review:",
     height=150,
     placeholder="Example: This product exceeded my expectations. The quality is amazing!"
 )
